@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SimonPeter AI — Personal Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e293b;
+      --text:#e2e8f0;--muted:#64748b;--accent:#00d4ff;--accent2:#a855f7;
+      --green:#22c55e;--red:#ef4444;--gold:#f59e0b;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+    .app{display:flex;height:100vh}
+
+    /* Sidebar */
+    .sidebar{width:280px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+    .sidebar-header{padding:20px;border-bottom:1px solid var(--border)}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;color:#fff}
+    .logo-text h1{font-size:1rem;font-weight:700;color:var(--text)}
+    .logo-text span{font-size:.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:2px}
+    .sidebar-nav{flex:1;padding:12px;overflow-y:auto}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;cursor:pointer;transition:all .2s;color:var(--muted);font-size:.85rem;margin-bottom:2px}
+    .nav-item:hover,.nav-item.active{background:rgba(0,212,255,.08);color:var(--accent)}
+    .nav-item .icon{width:20px;text-align:center;font-size:1rem}
+    .sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+    .status{display:flex;align-items:center;gap:8px;font-size:.75rem;color:var(--muted)}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+    /* Main */
+    .main{flex:1;display:flex;flex-direction:column}
+    .main-header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface)}
+    .main-header h2{font-size:1rem;font-weight:600}
+    .header-actions{display:flex;gap:8px}
+    .header-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:.75rem;transition:all .2s}
+    .header-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+    /* Chat */
+    .chat-area{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+    .message{display:flex;gap:12px;max-width:80%;animation:fadeIn .3s}
+    .message.user{align-self:flex-end;flex-direction:row-reverse}
+    .message.ai{align-self:flex-start}
+    .msg-avatar{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0}
+    .message.ai .msg-avatar{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+    .message.user .msg-avatar{background:var(--surface2);color:var(--accent);border:1px solid var(--border)}
+    .msg-content{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;font-size:.85rem;line-height:1.6}
+    .message.user .msg-content{background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.2)}
+    .msg-content code{font-family:'JetBrains Mono',monospace;background:rgba(0,212,255,.1);padding:2px 6px;border-radius:4px;font-size:.8rem;color:var(--accent)}
+    .msg-content pre{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--green)}
+    .msg-content .card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin:8px 0}
+    .msg-content .card-title{font-weight:600;font-size:.8rem;color:var(--accent);margin-bottom:6px}
+    .msg-content .card-body{font-size:.8rem;color:var(--muted)}
+    .typing{display:flex;gap:4px;padding:8px 0}
+    .typing span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:typing 1.4s infinite}
+    .typing span:nth-child(2){animation-delay:.2s}
+    .typing span:nth-child(3){animation-delay:.4s}
+    @keyframes typing{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Input */
+    .chat-input{padding:16px 24px;border-top:1px solid var(--border);background:var(--surface)}
+    .input-wrap{display:flex;gap:10px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:6px 6px 6px 18px;transition:border-color .2s}
+    .input-wrap:focus-within{border-color:var(--accent)}
+    .input-wrap input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:.85rem;font-family:'Inter',sans-serif}
+    .input-wrap input::placeholder{color:var(--muted)}
+    .send-btn{width:36px;height:36px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:transform .2s}
+    .send-btn:hover{transform:scale(1.05)}
+    .mic-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+    .mic-btn:hover{border-color:var(--accent);color:var(--accent)}
+    .mic-btn.listening{border-color:var(--red);color:var(--red);animation:pulse 1s infinite}
+    .quick-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+    .quick-btn{padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:.7rem;transition:all .2s}
+    .quick-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,.05)}
+
+    /* Panels */
+    .panel{display:none;flex:1;overflow-y:auto;padding:24px}
+    .panel.active{display:block}
+    .panel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:16px}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px}
+    .stat-card .stat-label{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+    .stat-card .stat-value{font-size:1.6rem;font-weight:700;color:var(--accent)}
+    .stat-card .stat-sub{font-size:.75rem;color:var(--muted);margin-top:4px}
+    .note-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+    .note-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+    .note-item .note-text{font-size:.85rem;flex:1}
+    .note-item .note-time{font-size:.7rem;color:var(--muted);margin-left:12px}
+    .note-item .note-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem}
+    .weather-display{text-align:center;padding:30px}
+    .weather-temp{font-size:3rem;font-weight:700;color:var(--accent)}
+    .weather-desc{font-size:1rem;color:var(--muted);margin-top:4px}
+    .weather-details{display:flex;justify-content:center;gap:30px;margin-top:20px}
+    .weather-detail{text-align:center}
+    .weather-detail .label{font-size:.7rem;color:var(--muted);text-transform:uppercase}
+    .weather-detail .val{font-size:1rem;font-weight:600;margin-top:2px}
+
+    @media(max-width:768px){
+      .sidebar{display:none}
+      .message{max-width:95%}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">SP</div>
+          <div class="logo-text">
+            <h1>SimonPeter AI</h1>
+            <span>Personal Assistant</span>
+          </div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-panel="chat"><span class="icon">💬</span> Chat</div>
+        <div class="nav-item" data-panel="weather"><span class="icon">🌤</span> Weather</div>
+        <div class="nav-item" data-panel="notes"><span class="icon">📝</span> Notes</div>
+        <div class="nav-item" data-panel="calculator"><span class="icon">🧮</span> Calculator</div>
+        <div class="nav-item" data-panel="reminders"><span class="icon">⏰</span> Reminders</div>
+        <div class="nav-item" data-panel="search"><span class="icon">🔍</span> Web Search</div>
+        <div class="nav-item" data-panel="timer"><span class="icon">⏱</span> Timer</div>
+        <div class="nav-item" data-panel="about"><span class="icon">ℹ️</span> About</div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status">
+          <span class="status-dot"></span>
+          <span>System Online — Ready</span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <!-- Chat Panel -->
+      <div class="main-header">
+        <h2>💬 Chat</h2>
+        <div class="header-actions">
+          <button class="header-btn" onclick="clearChat()">Clear Chat</button>
+          <button class="header-btn" id="voiceBtn" onclick="toggleVoice()">🔇 Voice</button>
+        </div>
+      </div>
+      <div class="chat-area" id="chatArea">
+        <div class="message ai">
+          <div class="msg-avatar">SP</div>
+          <div class="msg-content">
+            Hey! I'm <strong>SimonPeter AI</strong>, your AI-powered assistant powered by NVIDIA NIM. I can help you with:<br><br>
+            • 🌤 Weather updates<br>
+            • 📝 Notes & reminders<br>
+            • 🧮 Calculations<br>
+            • 🔍 Web searches<br>
+            • ⏱ Timers<br>
+            • 📅 Date & time<br>
+            • 💬 Natural conversation<br><br>
+            Just type or use the quick actions below!
+          </div>
+        </div>
+      </div>
+      <div class="chat-input">
+        <div class="input-wrap">
+          <input type="text" id="userInput" placeholder="Ask me anything..." autocomplete="off">
+          <button class="mic-btn" id="micBtn" onclick="startVoiceInput()" title="Voice input">🎤</button>
+          <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+        <div class="quick-actions">
+          <button class="quick-btn" onclick="quickAsk('What time is it?')">🕐 Time</button>
+          <button class="quick-btn" onclick="quickAsk('What is today?')">📅 Date</button>
+          <button class="quick-btn" onclick="quickAsk('weather')">🌤 Weather</button>
+          <button class="quick-btn" onclick="quickAsk('help')">❓ Help</button>
+          <button class="quick-btn" onclick="quickAsk('tell me a joke')">😂 Joke</button>
+          <button class="quick-btn" onclick="quickAsk('note: ')">📝 Add Note</button>
+          <button class="quick-btn" onclick="quickAsk('calculate ')">🧮 Calculate</button>
+        </div>
+      </div>
+
+      <!-- Weather Panel -->
+      <div class="panel" id="panel-weather">
+        <h2>🌤 Weather</h2>
+        <p style="color:var(--muted);margin-top:4px;font-size:.85rem">Enter your city name</p>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input type="text" id="cityInput" placeholder="City name..." style="flex:1;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.85rem;outline:none">
+          <button class="send-btn" onclick="getWeather()" style="width:auto;padding:0 16px;border-radius:10px">Get</button>
+        </div>
+        <div id="weatherResult"></div>
+      </div>
+
+      <!-- Notes Panel -->
+      <div class="panel" id="panel-notes">
+        <h2>📝 Notes</h2>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input type="text" id="noteInput" placeholder="Add a note..." style="flex:1;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.85rem;outline:none">
+          <button class="send-btn" onclick="addNote()" style="width:auto;padding:0 16px;border-radius:10px">+</button>
+        </div>
+        <div class="note-list" id="noteList"></div>
+      </div>
+
+      <!-- Calculator Panel -->
+      <div class="panel" id="panel-calculator">
+        <h2>🧮 Calculator</h2>
+        <div style="margin-top:16px;max-width:320px">
+          <input type="text" id="calcInput" placeholder="Enter expression..." style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:1.2rem;font-family:'JetBrains Mono',monospace;outline:none;text-align:right">
+          <div id="calcResult" style="text-align:right;padding:8px;font-size:.85rem;color:var(--accent)"></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px" id="calcGrid"></div>
+        </div>
+      </div>
+
+      <!-- Reminders Panel -->
+      <div class="panel" id="panel-reminders">
+        <h2>⏰ Reminders</h2>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <input type="text" id="reminderText" placeholder="Reminder text..." style="flex:1;min-width:200px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.85rem;outline:none">
+          <input type="number" id="reminderMins" placeholder="Minutes" style="width:100px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.85rem;outline:none">
+          <button class="send-btn" onclick="addReminder()" style="width:auto;padding:0 16px;border-radius:10px">Set</button>
+        </div>
+        <div class="note-list" id="reminderList"></div>
+      </div>
+
+      <!-- Search Panel -->
+      <div class="panel" id="panel-search">
+        <h2>🔍 Web Search</h2>
+        <p style="color:var(--muted);margin-top:4px;font-size:.85rem">Search Google directly</p>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input type="text" id="searchInput" placeholder="Search..." style="flex:1;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.85rem;outline:none">
+          <button class="send-btn" onclick="webSearch()" style="width:auto;padding:0 16px;border-radius:10px">Search</button>
+        </div>
+      </div>
+
+      <!-- Timer Panel -->
+      <div class="panel" id="panel-timer">
+        <h2>⏱ Countdown Timer</h2>
+        <div style="text-align:center;margin-top:40px">
+          <div id="timerDisplay" style="font-size:3rem;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent)">00:00:00</div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;align-items:center">
+            <input type="number" id="countdownMins" placeholder="Minutes" min="1" style="width:100px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.85rem;outline:none;text-align:center">
+            <button class="header-btn" onclick="startCountdown()" style="padding:10px 20px">▶ Start</button>
+            <button class="header-btn" onclick="pauseCountdown()" style="padding:10px 20px">⏸ Pause</button>
+            <button class="header-btn" onclick="resetCountdown()" style="padding:10px 20px">⏹ Reset</button>
+          </div>
+          <div style="display:flex;gap:6px;justify-content:center;margin-top:16px;flex-wrap:wrap">
+            <button class="quick-btn" onclick="presetCountdown(1)">1 min</button>
+            <button class="quick-btn" onclick="presetCountdown(5)">5 min</button>
+            <button class="quick-btn" onclick="presetCountdown(10)">10 min</button>
+            <button class="quick-btn" onclick="presetCountdown(30)">30 min</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- About Panel -->
+      <div class="panel" id="panel-about">
+        <h2>ℹ️ About SimonPeter AI</h2>
+        <div class="stat-card" style="margin-top:16px">
+          <div class="card-title" style="font-size:1.1rem;margin-bottom:12px">AI-Powered Personal Assistant</div>
+          <p style="font-size:.85rem;color:var(--muted);line-height:1.7">
+            SimonPeter AI is an AI-powered assistant built with NVIDIA NIM integration for intelligent conversations. Originally a Python desktop app with voice commands, now available in the browser with cloud AI capabilities.<br><br>
+            <strong style="color:var(--text)">Features:</strong><br>
+            • 💬 Natural language chat with AI backend<br>
+            • 🌤 Live weather data<br>
+            • 📝 Notes with localStorage<br>
+            • ⏰ Reminders with notifications<br>
+            • 🧮 Built-in calculator<br>
+            • 🔍 Web search integration<br>
+            • ⏱ Countdown timer<br>
+            • 🎤 Voice input & responses (Web Speech API)<br><br>
+            <strong style="color:var(--text)">Built with:</strong> HTML, CSS, JavaScript, NVIDIA NIM AI backend — no frameworks, no dependencies.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let voiceEnabled = false;
+    let notes = JSON.parse(localStorage.getItem('sp_notes') || '[]');
+    let reminders = JSON.parse(localStorage.getItem('sp_reminders') || '[]');
+    let chatHistory = [];
+
+    let countdownInterval = null;
+    let countdownSeconds = 0;
+
+    const chatArea = document.getElementById('chatArea');
+    const userInput = document.getElementById('userInput');
+
+    userInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+    // Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+        const panel = item.dataset.panel;
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelector('.main-header').style.display = panel === 'chat' ? 'flex' : 'none';
+        document.querySelector('.chat-input').style.display = panel === 'chat' ? 'block' : 'none';
+        const p = document.getElementById('panel-' + panel);
+        if (p) p.classList.add('active');
+        if (panel === 'notes') renderNotes();
+        if (panel === 'reminders') renderReminders();
+      });
+    });
+
+    function addMessage(text, isUser = false) {
+      const div = document.createElement('div');
+      div.className = 'message ' + (isUser ? 'user' : 'ai');
+      div.innerHTML = `<div class="msg-avatar">${isUser ? 'U' : 'SP'}</div><div class="msg-content">${text}</div>`;
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function showTyping() {
+      const div = document.createElement('div');
+      div.className = 'message ai';
+      div.id = 'typing';
+      div.innerHTML = '<div class="msg-avatar">SP</div><div class="msg-content"><div class="typing"><span></span><span></span><span></span></div></div>';
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function removeTyping() {
+      const t = document.getElementById('typing');
+      if (t) t.remove();
+    }
+
+    function speak(text) {
+      if (!voiceEnabled || !window.speechSynthesis) return;
+      const u = new SpeechSynthesisUtterance(text.replace(/<[^>]*>/g, ''));
+      u.rate = 1;
+      u.pitch = 1;
+      window.speechSynthesis.speak(u);
+    }
+
+    function toggleVoice() {
+      voiceEnabled = !voiceEnabled;
+      document.getElementById('voiceBtn').textContent = voiceEnabled ? '🔊 Voice' : '🔇 Voice';
+    }
+
+    function formatMarkdown(text) {
+      let html = text;
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    }
+
+    function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
+      addMessage(text, true);
+      userInput.value = '';
+      chatHistory.push({ role: 'user', content: text });
+
+      const lower = text.toLowerCase();
+      if (lower.includes('time') || lower.includes('what time') ||
+          lower.includes('date') || lower.includes('today') || lower.includes('day') ||
+          lower.startsWith('note:') || lower.startsWith('note ') ||
+          lower.includes('show notes') || lower.includes('my notes') ||
+          lower.startsWith('remind') || lower.includes('reminder') ||
+          lower.startsWith('calculate') || lower.match(/^[\d\s\+\-\*\/\%\.\(\)]+$/) ||
+          lower.includes('joke') || lower.includes('funny') ||
+          lower.includes('help') || lower === '?' ||
+          lower.includes('who are you') || lower.includes('about you') || lower.includes('your name') ||
+          lower === 'clear' || lower.match(/^(hi|hello|hey|sup|yo|hola)/) ||
+          lower.includes('thank')) {
+        const response = processCommand(text);
+        addMessage(response);
+        speak(response);
+        chatHistory.push({ role: 'assistant', content: response.replace(/<[^>]*>/g, '') });
+        return;
+      }
+
+      showTyping();
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history: chatHistory })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('API error');
+        return res.json();
+      })
+      .then(data => {
+        removeTyping();
+        const response = data.reply || data.response || data.message || JSON.stringify(data);
+        const formatted = formatMarkdown(response);
+        addMessage(formatted);
+        speak(response);
+        chatHistory.push({ role: 'assistant', content: response });
+      })
+      .catch(() => {
+        removeTyping();
+        const response = processCommand(text);
+        addMessage(response);
+        speak(response);
+        chatHistory.push({ role: 'assistant', content: response.replace(/<[^>]*>/g, '') });
+      });
+    }
+
+    function quickAsk(text) {
+      userInput.value = text;
+      sendMessage();
+    }
+
+    function processCommand(input) {
+      const lower = input.toLowerCase();
+
+      if (lower.includes('time') || lower.includes('what time')) {
+        return `🕐 The current time is <strong>${new Date().toLocaleTimeString()}</strong>`;
+      }
+      if (lower.includes('date') || lower.includes('today') || lower.includes('day')) {
+        const d = new Date();
+        return `📅 Today is <strong>${d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>`;
+      }
+      if (lower.includes('weather')) {
+        const city = lower.replace(/.*weather\s*/i, '').trim() || 'your area';
+        fetchWeather(city);
+        return `🌤 Let me check the weather for <strong>${city}</strong>...`;
+      }
+      if (lower.startsWith('note:') || lower.startsWith('note ')) {
+        const noteText = input.replace(/^note[:\s]+/i, '').trim();
+        if (noteText) {
+          notes.push({ text: noteText, time: new Date().toLocaleString() });
+          localStorage.setItem('sp_notes', JSON.stringify(notes));
+          return `📝 Note saved: <strong>"${noteText}"</strong>`;
+        }
+        return '📝 Usage: <code>note: your note here</code>';
+      }
+      if (lower.includes('show notes') || lower.includes('my notes')) {
+        if (notes.length === 0) return '📝 No notes yet. Add one with <code>note: your text</code>';
+        return '📝 <strong>Your Notes:</strong><br>' + notes.map((n, i) => `${i + 1}. ${n.text}`).join('<br>');
+      }
+      if (lower.startsWith('remind') || lower.includes('reminder')) {
+        const match = input.match(/remind(?:er)?\s*(?:me\s*)?in\s*(\d+)\s*(min|sec|hour)/i);
+        if (match) {
+          const mins = match[2].startsWith('hour') ? parseInt(match[1]) * 60 : match[2].startsWith('sec') ? parseInt(match[1]) / 60 : parseInt(match[1]);
+          const secs = mins * 60;
+          const text = input.replace(/remind(?:er)?\s*(?:me\s*)?in\s*\d+\s*(?:min|sec|hour)\s*/i, '').trim() || 'Reminder';
+          setTimeout(() => {
+            addMessage(`⏰ <strong>Reminder:</strong> ${text}`);
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('SimonPeter AI', { body: text });
+            }
+          }, secs * 1000);
+          return `⏰ Reminder set for <strong>${match[1]} ${match[2]}</strong>: "${text}"`;
+        }
+        return '⏰ Usage: <code>remind me in 5 min your task</code>';
+      }
+      if (lower.startsWith('calculate') || lower.match(/^[\d\s\+\-\*\/\%\.\(\)]+$/)) {
+        const expr = input.replace(/^calculate\s*/i, '').trim();
+        try {
+          const result = Function('"use strict"; return (' + expr.replace(/[^0-9\+\-\*\/\%\.\(\)\s]/g, '') + ')')();
+          return `🧮 <strong>${expr} = ${result}</strong>`;
+        } catch { return '🧮 Invalid expression. Try: <code>calculate 2 + 2 * 3</code>'; }
+      }
+      if (lower.includes('joke') || lower.includes('funny')) {
+        const jokes = [
+          'Why do programmers prefer dark mode? Because light attracts bugs! 🐛',
+          'A SQL query walks into a bar, sees two tables and asks... "Can I JOIN you?"',
+          'Why do Java developers wear glasses? Because they can\'t C# 👓',
+          'How many programmers does it take to change a light bulb? None — that\'s a hardware problem!',
+          'Why was the JavaScript developer sad? Because he didn\'t Node how to Express himself 😢',
+          'There are 10 types of people in the world: those who understand binary and those who don\'t.',
+          'A programmer\'s wife tells him: "Go to the store and buy a loaf of bread. If they have eggs, buy a dozen." He comes home with 12 loaves. 🍞'
+        ];
+        return jokes[Math.floor(Math.random() * jokes.length)];
+      }
+      if (lower.includes('help') || lower === '?') {
+        return `💡 <strong>Available Commands:</strong><br><br>
+          • <code>time</code> — Current time<br>
+          • <code>date</code> — Today's date<br>
+          • <code>weather [city]</code> — Weather info<br>
+          • <code>note: text</code> — Save a note<br>
+          • <code>show notes</code> — View all notes<br>
+          • <code>remind me in 5 min task</code> — Set reminder<br>
+          • <code>calculate 2+2</code> — Math operations<br>
+          • <code>joke</code> — Tell a joke<br>
+          • <code>who are you</code> — About me<br>
+          • <code>clear</code> — Clear chat<br><br>
+          Or just type anything and I'll use AI to answer!`;
+      }
+      if (lower.includes('who are you') || lower.includes('about you') || lower.includes('your name')) {
+        return `🤖 I'm <strong>SimonPeter AI</strong>, an AI-powered assistant built by <strong>Anesh G J</strong> using NVIDIA NIM integration. I can have natural conversations and help with notes, weather, reminders, calculations, and more.`;
+      }
+      if (lower === 'clear') {
+        clearChat();
+        return '✨ Chat cleared!';
+      }
+      if (lower.match(/^(hi|hello|hey|sup|yo|hola)/)) {
+        return `Hey there! 👋 How can I help you today?`;
+      }
+      if (lower.includes('thank')) {
+        return `You're welcome! 😊 Always happy to help.`;
+      }
+      return `I'm not sure how to help with that yet. Try typing <code>help</code> to see what I can do! 🤔`;
+    }
+
+    async function fetchWeather(city) {
+      try {
+        const res = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
+        const data = await res.json();
+        const c = data.current_condition[0];
+        const temp = c.temp_C;
+        const desc = c.weatherDesc[0].value;
+        const humidity = c.humidity;
+        const wind = c.windspeedKmph;
+        const feels = c.FeelsLikeC;
+        setTimeout(() => {
+          addMessage(`🌤 <strong>Weather in ${city}:</strong><br><br>🌡 Temperature: <strong>${temp}°C</strong> (Feels like ${feels}°C)<br>☁️ Condition: <strong>${desc}</strong><br>💧 Humidity: ${humidity}%<br>💨 Wind: ${wind} km/h`);
+        }, 300);
+      } catch {
+        setTimeout(() => addMessage('❌ Could not fetch weather. Try another city name.'), 300);
+      }
+    }
+
+    function getWeather() {
+      const city = document.getElementById('cityInput').value.trim();
+      if (!city) return;
+      document.getElementById('weatherResult').innerHTML = '<p style="color:var(--muted);margin-top:16px">Loading...</p>';
+      fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`)
+        .then(r => r.json())
+        .then(data => {
+          const c = data.current_condition[0];
+          document.getElementById('weatherResult').innerHTML = `
+            <div class="weather-display">
+              <div class="weather-temp">${c.temp_C}°C</div>
+              <div class="weather-desc">${c.weatherDesc[0].value}</div>
+              <div class="weather-details">
+                <div class="weather-detail"><div class="label">Feels Like</div><div class="val">${c.FeelsLikeC}°C</div></div>
+                <div class="weather-detail"><div class="label">Humidity</div><div class="val">${c.humidity}%</div></div>
+                <div class="weather-detail"><div class="label">Wind</div><div class="val">${c.windspeedKmph} km/h</div></div>
+                <div class="weather-detail"><div class="label">Visibility</div><div class="val">${c.visibility} km</div></div>
+              </div>
+            </div>`;
+        })
+        .catch(() => {
+          document.getElementById('weatherResult').innerHTML = '<p style="color:var(--red);margin-top:16px">Could not fetch weather. Try another city.</p>';
+        });
+    }
+
+    // Notes
+    function renderNotes() {
+      const list = document.getElementById('noteList');
+      list.innerHTML = notes.length === 0 ? '<p style="color:var(--muted);font-size:.85rem;margin-top:12px">No notes yet</p>' :
+        notes.map((n, i) => `<div class="note-item"><span class="note-text">${n.text}</span><span class="note-time">${n.time}</span><button class="note-del" onclick="deleteNote(${i})">✕</button></div>`).join('');
+    }
+    function addNote() {
+      const input = document.getElementById('noteInput');
+      if (!input.value.trim()) return;
+      notes.push({ text: input.value.trim(), time: new Date().toLocaleString() });
+      localStorage.setItem('sp_notes', JSON.stringify(notes));
+      input.value = '';
+      renderNotes();
+    }
+    function deleteNote(i) { notes.splice(i, 1); localStorage.setItem('sp_notes', JSON.stringify(notes)); renderNotes(); }
+
+    // Reminders
+    function renderReminders() {
+      const list = document.getElementById('reminderList');
+      list.innerHTML = reminders.length === 0 ? '<p style="color:var(--muted);font-size:.85rem;margin-top:12px">No active reminders</p>' :
+        reminders.map((r, i) => `<div class="note-item"><span class="note-text">⏰ ${r.text} — in ${r.mins} min</span><span class="note-time">${r.time}</span><button class="note-del" onclick="deleteReminder(${i})">✕</button></div>`).join('');
+    }
+    function addReminder() {
+      const text = document.getElementById('reminderText').value.trim();
+      const mins = parseInt(document.getElementById('reminderMins').value);
+      if (!text || !mins) return;
+      reminders.push({ text, mins, time: new Date().toLocaleString() });
+      localStorage.setItem('sp_reminders', JSON.stringify(reminders));
+      setTimeout(() => {
+        addMessage(`⏰ <strong>Reminder:</strong> ${text}`);
+        reminders = reminders.filter(r => r.text !== text);
+        localStorage.setItem('sp_reminders', JSON.stringify(reminders));
+      }, mins * 60 * 1000);
+      document.getElementById('reminderText').value = '';
+      document.getElementById('reminderMins').value = '';
+      renderReminders();
+    }
+    function deleteReminder(i) { reminders.splice(i, 1); localStorage.setItem('sp_reminders', JSON.stringify(reminders)); renderReminders(); }
+
+    // Calculator
+    const calcButtons = ['7','8','9','/','4','5','6','*','1','2','3','-','0','.','=','+'];
+    const calcGrid = document.getElementById('calcGrid');
+    calcButtons.forEach(b => {
+      const btn = document.createElement('button');
+      btn.textContent = b;
+      btn.style.cssText = 'padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:1rem;cursor:pointer;font-family:JetBrains Mono,monospace;transition:all .15s';
+      btn.onmouseover = () => btn.style.borderColor = 'var(--accent)';
+      btn.onmouseout = () => btn.style.borderColor = 'var(--border)';
+      btn.onclick = () => {
+        const inp = document.getElementById('calcInput');
+        if (b === '=') {
+          try { document.getElementById('calcResult').textContent = '= ' + Function('"use strict"; return (' + inp.value + ')')(); }
+          catch { document.getElementById('calcResult').textContent = 'Error'; }
+        } else { inp.value += b; }
+      };
+      calcGrid.appendChild(btn);
+    });
+
+    // Search
+    function webSearch() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (q) window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
+    }
+
+    // Countdown Timer
+    function updateTimerDisplay() {
+      const h = String(Math.floor(countdownSeconds / 3600)).padStart(2, '0');
+      const m = String(Math.floor((countdownSeconds % 3600) / 60)).padStart(2, '0');
+      const s = String(countdownSeconds % 60).padStart(2, '0');
+      document.getElementById('timerDisplay').textContent = `${h}:${m}:${s}`;
+    }
+
+    function startCountdown() {
+      const mins = parseInt(document.getElementById('countdownMins').value);
+      if (!mins || mins <= 0) return;
+      countdownSeconds = mins * 60;
+      if (countdownInterval) clearInterval(countdownInterval);
+      updateTimerDisplay();
+      countdownInterval = setInterval(() => {
+        countdownSeconds--;
+        updateTimerDisplay();
+        if (countdownSeconds <= 0) {
+          clearInterval(countdownInterval);
+          addMessage('⏰ <strong>Timer Alert!</strong> Your countdown finished!');
+          speak('Timer finished!');
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('SimonPeter AI', { body: 'Timer finished!' });
+          }
+        }
+      }, 1000);
+    }
+
+    function pauseCountdown() {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    }
+
+    function resetCountdown() {
+      pauseCountdown();
+      countdownSeconds = 0;
+      updateTimerDisplay();
+    }
+
+    function presetCountdown(mins) {
+      document.getElementById('countdownMins').value = mins;
+      countdownSeconds = mins * 60;
+      updateTimerDisplay();
+    }
+
+    // Voice Input
+    function startVoiceInput() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        addMessage('Voice input is not supported in your browser.');
+        return;
+      }
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      document.getElementById('micBtn').textContent = '🔴';
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        document.getElementById('micBtn').textContent = '🎤';
+        userInput.value = text;
+        sendMessage();
+      };
+      recognition.onerror = () => { document.getElementById('micBtn').textContent = '🎤'; };
+      recognition.onend = () => { document.getElementById('micBtn').textContent = '🎤'; };
+      recognition.start();
+    }
+
+    function clearChat() {
+      chatArea.innerHTML = '';
+      chatHistory = [];
+    }
+
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  </script>
+</body>
+</html>
