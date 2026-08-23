@@ -52,7 +52,11 @@
     .msg-content{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;font-size:.85rem;line-height:1.6}
     .message.user .msg-content{background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.2)}
     .msg-content code{font-family:'JetBrains Mono',monospace;background:rgba(0,212,255,.1);padding:2px 6px;border-radius:4px;font-size:.8rem;color:var(--accent)}
-    .msg-content pre{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--green)}
+    .msg-content pre{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--green);white-space:pre-wrap}
+    .msg-content pre code{background:none;padding:0;color:inherit;font-size:inherit}
+    .msg-content li{margin:2px 0;line-height:1.5}
+    .msg-content h2,.msg-content h3,.msg-content h4{color:var(--accent);margin:10px 0 4px}
+    .msg-content a{color:var(--accent);text-decoration:underline}
     .msg-content .card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin:8px 0}
     .msg-content .card-title{font-weight:600;font-size:.8rem;color:var(--accent);margin-bottom:6px}
     .msg-content .card-body{font-size:.8rem;color:var(--muted)}
@@ -148,15 +152,15 @@
         <div class="message ai">
           <div class="msg-avatar">SP</div>
           <div class="msg-content">
-            Hey! I'm <strong>SimonPeter AI</strong>, your AI-powered assistant powered by NVIDIA NIM. I can help you with:<br><br>
-            • 🌤 Weather updates<br>
-            • 📝 Notes & reminders<br>
-            • 🧮 Calculations<br>
-            • 🔍 Web searches<br>
-            • ⏱ Timers<br>
-            • 📅 Date & time<br>
-            • 💬 Natural conversation<br><br>
-            Just type or use the quick actions below!
+            Hey! I'm <strong>SimonPeter AI</strong>, your AI-powered assistant. I can answer questions on any topic with accurate, detailed responses.<br><br>
+            <strong>Ask me about:</strong><br>
+            • 💻 Programming (Python, JavaScript, Java, C++, and more)<br>
+            • 🔢 Math — step-by-step solutions<br>
+            • 🔬 Science, history, geography<br>
+            • 🔐 Cybersecurity<br>
+            • 💡 General knowledge & advice<br>
+            • 🌤 Weather, notes, reminders & more<br><br>
+            Just type your question and I'll give you a thorough answer!
           </div>
         </div>
       </div>
@@ -170,10 +174,10 @@
           <button class="quick-btn" onclick="quickAsk('What time is it?')">🕐 Time</button>
           <button class="quick-btn" onclick="quickAsk('What is today?')">📅 Date</button>
           <button class="quick-btn" onclick="quickAsk('weather')">🌤 Weather</button>
-          <button class="quick-btn" onclick="quickAsk('help')">❓ Help</button>
           <button class="quick-btn" onclick="quickAsk('tell me a joke')">😂 Joke</button>
-          <button class="quick-btn" onclick="quickAsk('note: ')">📝 Add Note</button>
-          <button class="quick-btn" onclick="quickAsk('calculate ')">🧮 Calculate</button>
+          <button class="quick-btn" onclick="quickAsk('note: ')">📝 Note</button>
+          <button class="quick-btn" onclick="quickAsk('What is machine learning?')">🤖 AI</button>
+          <button class="quick-btn" onclick="quickAsk('Explain cybersecurity in simple terms')">🔐 Security</button>
         </div>
       </div>
 
@@ -255,15 +259,17 @@
         <div class="stat-card" style="margin-top:16px">
           <div class="card-title" style="font-size:1.1rem;margin-bottom:12px">AI-Powered Personal Assistant</div>
           <p style="font-size:.85rem;color:var(--muted);line-height:1.7">
-            SimonPeter AI is an AI-powered assistant built with NVIDIA NIM integration for intelligent conversations. Originally a Python desktop app with voice commands, now available in the browser with cloud AI capabilities.<br><br>
-            <strong style="color:var(--text)">Features:</strong><br>
-            • 💬 Natural language chat with AI backend<br>
+            SimonPeter AI is a personal assistant powered by <strong>NVIDIA NIM</strong> AI integration for accurate, intelligent conversations across many domains.<br><br>
+            <strong style="color:var(--text)">Capabilities:</strong><br>
+            • 💬 Natural language chat with AI backend — asks and answers any question<br>
+            • 💻 Programming help — Python, JavaScript, Java, C++, and more<br>
+            • 🔢 Math — step-by-step solutions for any math problem<br>
+            • 🔬 Science, history, geography — accurate factual answers<br>
+            • 🔐 Cybersecurity — detailed technical knowledge<br>
             • 🌤 Live weather data<br>
             • 📝 Notes with localStorage<br>
             • ⏰ Reminders with notifications<br>
             • 🧮 Built-in calculator<br>
-            • 🔍 Web search integration<br>
-            • ⏱ Countdown timer<br>
             • 🎤 Voice input & responses (Web Speech API)<br><br>
             <strong style="color:var(--text)">Built with:</strong> HTML, CSS, JavaScript, NVIDIA NIM AI backend — no frameworks, no dependencies.
           </p>
@@ -339,8 +345,20 @@
 
     function formatMarkdown(text) {
       let html = text;
+      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+        const escaped = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return `<pre><code class="lang-${lang}">${escaped}</code></pre>`;
+      });
+      html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
       html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      html = html.replace(/^### (.+)$/gm, '<h4 style="margin:10px 0 4px;color:var(--accent)">$1</h4>');
+      html = html.replace(/^## (.+)$/gm, '<h3 style="margin:12px 0 6px;color:var(--accent)">$1</h3>');
+      html = html.replace(/^# (.+)$/gm, '<h2 style="margin:14px 0 8px;color:var(--accent)">$1</h2>');
+      html = html.replace(/^\- (.+)$/gm, '<li style="margin-left:20px;list-style:disc;margin-bottom:3px">$1</li>');
+      html = html.replace(/^\d+\. (.+)$/gm, '<li style="margin-left:20px;list-style:decimal;margin-bottom:3px">$1</li>');
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--accent);text-decoration:underline">$1</a>');
+      html = html.replace(/\n{2,}/g, '<br><br>');
       html = html.replace(/\n/g, '<br>');
       return html;
     }
@@ -353,23 +371,27 @@
       chatHistory.push({ role: 'user', content: text });
 
       const lower = text.toLowerCase();
-      if (lower.includes('time') || lower.includes('what time') ||
-          lower.includes('date') || lower.includes('today') || lower.includes('day') ||
-          lower.startsWith('note:') || lower.startsWith('note ') ||
-          lower.includes('show notes') || lower.includes('my notes') ||
-          lower.startsWith('remind') || lower.includes('reminder') ||
-          lower.startsWith('calculate') || lower.match(/^[\d\s\+\-\*\/\%\.\(\)]+$/) ||
-          lower.includes('joke') || lower.includes('funny') ||
-          lower.includes('help') || lower === '?' ||
-          lower.includes('who are you') || lower.includes('about you') || lower.includes('your name') ||
-          lower === 'clear' || lower.match(/^(hi|hello|hey|sup|yo|hola)/) ||
-          lower.includes('thank')) {
-        const response = processCommand(text);
-        addMessage(response);
-        speak(response);
-        chatHistory.push({ role: 'assistant', content: response.replace(/<[^>]*>/g, '') });
-        return;
+
+      if (lower.startsWith('note:') || lower.startsWith('note ')) {
+        const noteText = text.replace(/^note[:\s]+/i, '').trim();
+        if (noteText) {
+          notes.push({ text: noteText, time: new Date().toLocaleString() });
+          localStorage.setItem('sp_notes', JSON.stringify(notes));
+          const response = `📝 Note saved: **"${noteText}"**`;
+          addMessage(response);
+          chatHistory.push({ role: 'assistant', content: response });
+          return;
+        }
       }
+      if (lower.includes('show notes') || lower.includes('my notes')) {
+        if (notes.length === 0) {
+          const r = '📝 No notes yet. Add one with `note: your text`';
+          addMessage(r); chatHistory.push({ role: 'assistant', content: r }); return;
+        }
+        const r = '📝 **Your Notes:**\n\n' + notes.map((n, i) => `${i + 1}. ${n.text}`).join('\n');
+        addMessage(formatMarkdown(r)); chatHistory.push({ role: 'assistant', content: r }); return;
+      }
+      if (lower === 'clear') { clearChat(); return; }
 
       showTyping();
       fetch('/api/chat', {
@@ -383,7 +405,7 @@
       })
       .then(data => {
         removeTyping();
-        const response = data.reply || data.response || data.message || JSON.stringify(data);
+        const response = data.reply || data.response || data.message || 'I had trouble generating a response. Please try again.';
         const formatted = formatMarkdown(response);
         addMessage(formatted);
         speak(response);
@@ -405,64 +427,26 @@
 
     function processCommand(input) {
       const lower = input.toLowerCase();
+      const now = new Date();
 
       if (lower.includes('time') || lower.includes('what time')) {
-        return `🕐 The current time is <strong>${new Date().toLocaleTimeString()}</strong>`;
+        return `🕐 The current time is <strong>${now.toLocaleTimeString()}</strong>`;
       }
       if (lower.includes('date') || lower.includes('today') || lower.includes('day')) {
-        const d = new Date();
-        return `📅 Today is <strong>${d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>`;
+        return `📅 Today is <strong>${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>`;
       }
       if (lower.includes('weather')) {
-        const city = lower.replace(/.*weather\s*/i, '').trim() || 'your area';
-        fetchWeather(city);
-        return `🌤 Let me check the weather for <strong>${city}</strong>...`;
-      }
-      if (lower.startsWith('note:') || lower.startsWith('note ')) {
-        const noteText = input.replace(/^note[:\s]+/i, '').trim();
-        if (noteText) {
-          notes.push({ text: noteText, time: new Date().toLocaleString() });
-          localStorage.setItem('sp_notes', JSON.stringify(notes));
-          return `📝 Note saved: <strong>"${noteText}"</strong>`;
-        }
-        return '📝 Usage: <code>note: your note here</code>';
-      }
-      if (lower.includes('show notes') || lower.includes('my notes')) {
-        if (notes.length === 0) return '📝 No notes yet. Add one with <code>note: your text</code>';
-        return '📝 <strong>Your Notes:</strong><br>' + notes.map((n, i) => `${i + 1}. ${n.text}`).join('<br>');
-      }
-      if (lower.startsWith('remind') || lower.includes('reminder')) {
-        const match = input.match(/remind(?:er)?\s*(?:me\s*)?in\s*(\d+)\s*(min|sec|hour)/i);
-        if (match) {
-          const mins = match[2].startsWith('hour') ? parseInt(match[1]) * 60 : match[2].startsWith('sec') ? parseInt(match[1]) / 60 : parseInt(match[1]);
-          const secs = mins * 60;
-          const text = input.replace(/remind(?:er)?\s*(?:me\s*)?in\s*\d+\s*(?:min|sec|hour)\s*/i, '').trim() || 'Reminder';
-          setTimeout(() => {
-            addMessage(`⏰ <strong>Reminder:</strong> ${text}`);
-            if ('Notification' in window && Notification.permission === 'granted') {
-              new Notification('SimonPeter AI', { body: text });
-            }
-          }, secs * 1000);
-          return `⏰ Reminder set for <strong>${match[1]} ${match[2]}</strong>: "${text}"`;
-        }
-        return '⏰ Usage: <code>remind me in 5 min your task</code>';
-      }
-      if (lower.startsWith('calculate') || lower.match(/^[\d\s\+\-\*\/\%\.\(\)]+$/)) {
-        const expr = input.replace(/^calculate\s*/i, '').trim();
-        try {
-          const result = Function('"use strict"; return (' + expr.replace(/[^0-9\+\-\*\/\%\.\(\)\s]/g, '') + ')')();
-          return `🧮 <strong>${expr} = ${result}</strong>`;
-        } catch { return '🧮 Invalid expression. Try: <code>calculate 2 + 2 * 3</code>'; }
+        const city = lower.replace(/.*weather\s*/i, '').trim();
+        if (city) { fetchWeather(city); return `🌤 Checking weather for <strong>${city}</strong>...`; }
+        return '🌤 Usage: Type <code>weather London</code> or use the Weather tab';
       }
       if (lower.includes('joke') || lower.includes('funny')) {
         const jokes = [
-          'Why do programmers prefer dark mode? Because light attracts bugs! 🐛',
+          'Why do programmers prefer dark mode? Because light attracts bugs!',
           'A SQL query walks into a bar, sees two tables and asks... "Can I JOIN you?"',
-          'Why do Java developers wear glasses? Because they can\'t C# 👓',
+          'Why do Java developers wear glasses? Because they can\'t C#!',
           'How many programmers does it take to change a light bulb? None — that\'s a hardware problem!',
-          'Why was the JavaScript developer sad? Because he didn\'t Node how to Express himself 😢',
           'There are 10 types of people in the world: those who understand binary and those who don\'t.',
-          'A programmer\'s wife tells him: "Go to the store and buy a loaf of bread. If they have eggs, buy a dozen." He comes home with 12 loaves. 🍞'
         ];
         return jokes[Math.floor(Math.random() * jokes.length)];
       }
@@ -473,19 +457,11 @@
           • <code>weather [city]</code> — Weather info<br>
           • <code>note: text</code> — Save a note<br>
           • <code>show notes</code> — View all notes<br>
-          • <code>remind me in 5 min task</code> — Set reminder<br>
-          • <code>calculate 2+2</code> — Math operations<br>
-          • <code>joke</code> — Tell a joke<br>
-          • <code>who are you</code> — About me<br>
-          • <code>clear</code> — Clear chat<br><br>
+          • <code>joke</code> — Tell a joke<br><br>
           Or just type anything and I'll use AI to answer!`;
       }
       if (lower.includes('who are you') || lower.includes('about you') || lower.includes('your name')) {
         return `🤖 I'm <strong>SimonPeter AI</strong>, an AI-powered assistant built by <strong>Anesh G J</strong> using NVIDIA NIM integration. I can have natural conversations and help with notes, weather, reminders, calculations, and more.`;
-      }
-      if (lower === 'clear') {
-        clearChat();
-        return '✨ Chat cleared!';
       }
       if (lower.match(/^(hi|hello|hey|sup|yo|hola)/)) {
         return `Hey there! 👋 How can I help you today?`;
@@ -493,7 +469,13 @@
       if (lower.includes('thank')) {
         return `You're welcome! 😊 Always happy to help.`;
       }
-      return `I'm not sure how to help with that yet. Try typing <code>help</code> to see what I can do! 🤔`;
+      return `I'm having trouble connecting to my AI backend right now. I can still help with:<br><br>
+        • <code>time</code> — Current time<br>
+        • <code>date</code> — Today's date<br>
+        • <code>weather [city]</code> — Weather info<br>
+        • <code>note: text</code> — Save a note<br>
+        • <code>joke</code> — Tell a joke<br><br>
+        Or try again in a moment! 🤔`;
     }
 
     async function fetchWeather(city) {
